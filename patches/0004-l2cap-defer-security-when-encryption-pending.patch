@@ -1,0 +1,26 @@
+--- a/net/bluetooth/l2cap_core.c
++++ b/net/bluetooth/l2cap_core.c
+@@ -4110,8 +4110,22 @@
+ 
+ 	l2cap_chan_lock(pchan);
+ 
+-	/* Check if the ACL is secure enough (if not SDP) */
++	/* Check if the ACL is secure enough (if not SDP).
++	 *
++	 * Some controllers (PS5 MediaTek 0e8d:3603) deliver the remote's
++	 * L2CAP Connection Request on the bulk endpoint before the Encryption
++	 * Change event arrives on the interrupt endpoint. If a link key has
++	 * already been handed over, encryption is on its way: answer
++	 * "pending" and let l2cap_security_cfm() finish (or block) the
++	 * channel once the link is actually encrypted.
++	 */
+ 	if (psm != cpu_to_le16(L2CAP_PSM_SDP) &&
++	    !test_bit(HCI_CONN_ENCRYPT, &conn->hcon->flags) &&
++	    conn->hcon->key_type != 0xff &&
++	    (conn->info_state & L2CAP_INFO_FEAT_MASK_REQ_DONE)) {
++		BT_DBG("conn %p encryption pending, deferring psm 0x%2.2x",
++		       conn, __le16_to_cpu(psm));
++	} else if (psm != cpu_to_le16(L2CAP_PSM_SDP) &&
+ 	    (!hci_conn_check_link_mode(conn->hcon) ||
+ 	    !l2cap_check_enc_key_size(conn->hcon, pchan))) {
+ 		conn->disc_reason = HCI_ERROR_AUTH_FAILURE;

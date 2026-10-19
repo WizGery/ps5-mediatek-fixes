@@ -1,0 +1,47 @@
+--- a/drivers/bluetooth/btusb.c
++++ b/drivers/bluetooth/btusb.c
+@@ -35,6 +35,7 @@
+ static bool enable_autosuspend = IS_ENABLED(CONFIG_BT_HCIBTUSB_AUTOSUSPEND);
+ static bool enable_poll_sync = IS_ENABLED(CONFIG_BT_HCIBTUSB_POLL_SYNC);
+ static bool reset = true;
++static int ps5_tx_ep = 0x02;
+ 
+ static struct usb_driver btusb_driver;
+ 
+@@ -4127,6 +4128,26 @@
+ 		return -ENODEV;
+ 	}
+ 
++	/* PS5 MediaTek (0e8d:3603): the chip only drains ACL data from the
++	 * second bulk OUT endpoint (0x02), the one paired with bulk IN 0x82.
++	 */
++	if (le16_to_cpu(interface_to_usbdev(intf)->descriptor.idVendor) == 0x0e8d &&
++	    le16_to_cpu(interface_to_usbdev(intf)->descriptor.idProduct) == 0x3603 && ps5_tx_ep) {
++		struct usb_host_interface *alt = intf->cur_altsetting;
++		int i;
++
++		for (i = 0; i < alt->desc.bNumEndpoints; i++) {
++			struct usb_endpoint_descriptor *ep = &alt->endpoint[i].desc;
++
++			if (usb_endpoint_is_bulk_out(ep) &&
++			    ep->bEndpointAddress == ps5_tx_ep) {
++				data->bulk_tx_ep = ep;
++				dev_info(&intf->dev, "PS5: using bulk OUT 0x%02x for ACL\n",
++					 ps5_tx_ep);
++			}
++		}
++	}
++
+ 	if (id->driver_info & BTUSB_AMP) {
+ 		data->cmdreq_type = USB_TYPE_CLASS | 0x01;
+ 		data->cmdreq = 0x2b;
+@@ -4722,6 +4743,9 @@
+ module_param(reset, bool, 0644);
+ MODULE_PARM_DESC(reset, "Send HCI reset command on initialization");
+ 
++module_param(ps5_tx_ep, int, 0644);
++MODULE_PARM_DESC(ps5_tx_ep, "PS5 MediaTek BT: bulk OUT endpoint for ACL (0 = default)");
++
+ MODULE_AUTHOR("Marcel Holtmann <marcel@holtmann.org>");
+ MODULE_DESCRIPTION("Generic Bluetooth USB driver ver " VERSION);
+ MODULE_VERSION(VERSION);

@@ -1,0 +1,10 @@
+# El chip Bluetooth MediaTek interno de la PS5 (0e8d:3603) expone un segundo
+# adaptador (interfaces 3 y 4) que btusb registra como hci1 y que impide que
+# hci0 funcione. Se desactivan esas interfaces (mismo arreglo que ps5-linux
+# aplica al chip Marvell 1286:2059).
+ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="0e8d", ATTRS{idProduct}=="3603", ATTR{bInterfaceNumber}=="03", ATTR{authorized}="0"
+ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="0e8d", ATTRS{idProduct}=="3603", ATTR{bInterfaceNumber}=="04", ATTR{authorized}="0"
+
+# El chip no tolera el ahorro de energía USB: los envíos se atascan
+# (mismo arreglo que BTUSB_NO_AUTOSUSPEND en el parche de ps5-linux).
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0e8d", ATTR{idProduct}=="3603", TEST=="power/control", ATTR{power/control}="on"
