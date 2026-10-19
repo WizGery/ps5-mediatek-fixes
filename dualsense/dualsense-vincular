@@ -1,0 +1,13 @@
+#!/bin/sh
+# Vuelve a vincular por USB un DualSense con el adaptador Bluetooth de este equipo.
+# Lo lanza la regla udev 99-dualsense-vincular.rules al enchufar el mando.
+set -e
+HIDRAW=/dev/$1
+ADAPTADOR=$(bluetoothctl list | awk '/Controller/ {print $2; exit}')
+if [ -z "$ADAPTADOR" ]; then
+    echo "No hay adaptador Bluetooth" >&2
+    exit 1
+fi
+python3 -I /usr/local/lib/ps5-dualsense/vincular.py "$HIDRAW" "$ADAPTADOR"
+# bluetoothd solo lee las claves al arrancar
+systemctl restart bluetooth

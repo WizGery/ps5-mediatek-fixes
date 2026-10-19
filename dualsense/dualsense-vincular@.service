@@ -1,0 +1,7 @@
+[Unit]
+Description=Vincular el DualSense conectado por USB (%i) con el Bluetooth
+After=bluetooth.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/dualsense-vincular %i

@@ -1,0 +1,2 @@
+# Al enchufar un DualSense por USB, vincularlo con el Bluetooth de este equipo.
+ACTION=="add", SUBSYSTEM=="hidraw", SUBSYSTEMS=="usb", ATTRS{idVendor}=="054c", ATTRS{idProduct}=="0ce6", TAG+="systemd", ENV{SYSTEMD_WANTS}+="dualsense-vincular@%k.service"

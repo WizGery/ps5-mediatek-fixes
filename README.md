@@ -50,3 +50,17 @@ sudo systemctl restart bluetooth
 
 `vincular.py` writes the adapter address and a new link key to the controller (feature
 report `0x0A`) and stores the same key in `/var/lib/bluetooth`. Unplug it and press PS.
+
+### Automatic pairing on USB plug-in
+
+```sh
+sudo install -Dm755 dualsense/vincular.py /usr/local/lib/ps5-dualsense/vincular.py
+sudo install -Dm755 dualsense/dualsense-vincular /usr/local/sbin/dualsense-vincular
+sudo install -Dm644 dualsense/dualsense-vincular@.service /etc/systemd/system/
+sudo install -Dm644 dualsense/99-dualsense-vincular.rules /etc/udev/rules.d/
+sudo systemctl daemon-reload && sudo udevadm control --reload
+```
+
+Every time the controller is plugged in over USB it is paired again with this machine's
+adapter (useful after pairing it on the PS5 OS). The rule only matches the USB hidraw
+node, not the Bluetooth one.
